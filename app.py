@@ -2,13 +2,14 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import os
+import logging
 
 app = Flask(__name__)
 
 # Load environment variables safely
 load_dotenv()
 
-# Email configuration (will fail gracefully if .env missing)
+# Email configuration
 mail = None
 if all(k in os.environ for k in ['GMAIL_USER', 'GMAIL_APP_PASSWORD']):
     app.config.update(
@@ -21,6 +22,9 @@ if all(k in os.environ for k in ['GMAIL_USER', 'GMAIL_APP_PASSWORD']):
     )
     mail = Mail(app)
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -31,15 +35,18 @@ def send_email():
         try:
             msg = Message(
                 subject=f"New message from {request.form['name']}",
-                recipients=['your_email@gmail.com'],  # Will be ignored without .env
+                recipients=['cyndoli34@gmail.com'], 
                 body=f"""Name: {request.form['name']}
 Email: {request.form['email']}
 Message: {request.form['message']}"""
             )
             mail.send(msg)
+            logging.info("✅ Email sent successfully!")
         except Exception as e:
-            pass  # Silent fail for demo
+            logging.error(f"❌ Email sending failed: {e}")
+            return "Email sending failed", 500
     return redirect(url_for('home'))
 
-if __name__ == '__main__':
-    app.run(debug=False)
+# Ensure compatibility with Vercel
+if __name__ == "__main__":
+    app.run()
